@@ -5240,6 +5240,13 @@ unsafe impl<'a, T> TrustedRandomAccess for Windows<'a, T> {
     }
 }
 
+impl<'a, T> Windows<'a, T> {
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn as_slice(&self) -> &'a [T] {
+        self.v
+    }
+}
+
 /// An iterator over a slice in (non-overlapping) chunks (`chunk_size` elements at a
 /// time), starting at the beginning of the slice.
 ///
@@ -5394,6 +5401,13 @@ unsafe impl<'a, T> TrustedRandomAccess for Chunks<'a, T> {
     }
 }
 
+impl<'a, T> Chunks<'a, T> {
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn as_slice(&self) -> &'a [T] {
+        self.v
+    }
+}
+
 /// An iterator over a slice in (non-overlapping) mutable chunks (`chunk_size`
 /// elements at a time), starting at the beginning of the slice.
 ///
@@ -5545,6 +5559,23 @@ unsafe impl<'a, T> TrustedRandomAccess for ChunksMut<'a, T> {
     }
 }
 
+impl<'a, T> ChunksMut<'a, T> {
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn into_slice(self) -> &'a mut [T] {
+        self.v
+    }
+
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn as_slice(&self) -> &[T] {
+        &*self.v
+    }
+
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        &mut*self.v
+    }
+}
+
 /// An iterator over a slice in (non-overlapping) chunks (`chunk_size` elements at a
 /// time), starting at the beginning of the slice.
 ///
@@ -5572,6 +5603,13 @@ impl<'a, T> ChunksExact<'a, T> {
     #[stable(feature = "chunks_exact", since = "1.31.0")]
     pub fn remainder(&self) -> &'a [T] {
         self.rem
+    }
+
+    /// Returns the remainder of the original slice that is going to be 
+    /// returned by the iterator.
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn as_slice(&self) -> &'a [T] {
+        self.v
     }
 }
 
@@ -5712,6 +5750,31 @@ impl<'a, T> ChunksExactMut<'a, T> {
     #[stable(feature = "chunks_exact", since = "1.31.0")]
     pub fn into_remainder(self) -> &'a mut [T] {
         self.rem
+    }
+
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn into_slice(self) -> &'a mut [T] {
+        self.v
+    }
+
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn as_slice(&self) -> &[T] {
+        &*self.v
+    }
+
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        &mut*self.v
+    }
+
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn as_remainder_slice(&self) -> &[T] {
+        &*self.rem
+    }
+
+    #[unstable(feature = "slice_iterators_as_slice", issue = "none")]
+    pub fn as_remainder_mut_slice(&mut self) -> &mut [T] {
+        &mut*self.rem
     }
 }
 

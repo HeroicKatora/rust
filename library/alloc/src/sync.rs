@@ -1416,7 +1416,26 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Arc<T> {
         // Because `fetch_sub` is already atomic, we do not need to synchronize
         // with other threads unless we are going to delete the object. This
         // same logic applies to the below `fetch_sub` to the `weak` count.
-        if self.inner().strong.fetch_sub(1, Release) != 1 {
+        //
+        // However, we have a slight problem taking references here. Reference
+        // pointers are marked in ABI to be always valid for dereferencing. But
+        // after decrementing the atomic another thread may deallocate the memory
+        // block while the `&self` argument of `fetch_sub` still points to it.
+        //
+        // ```
+        // pub fn fetch_sub(&self, val: $int_type, order: Ordering) -> $int_type {
+        //     unsafe { atomic_sub(self.v.get(), val, order) }
+        //     // HERE
+        // }
+        // ```
+        //
+        // To avoid this situation we do not pass a reference to the atomic to any method and
+        // instead use the intrinsic on the pointer.
+        if {
+            let strong = self.inner().strong.as_mut_ptr();
+            let prev = core::intrinsics::atomic_xsub_rel(strong, 1);
+            prev != 1
+        } {
             return;
         }
 
