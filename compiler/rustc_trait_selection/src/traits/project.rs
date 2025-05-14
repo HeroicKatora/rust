@@ -1127,6 +1127,16 @@ fn assemble_candidates_from_impls<'cx, 'tcx>(
                             }
                         }
                     }
+                    _ if tcx.trait_is_comptime(trait_ref.def_id) => {
+                        match self_ty.kind() {
+                            // Only allow functions of the form:
+                            // ```
+                            // const fn some_name(_: core::comptime::Context) -> &'static str { … }
+                            // ```
+                            ty::FnDef(_, _) => true,
+                            _ => false,
+                        }
+                    }
                     _ if tcx.trait_is_auto(trait_ref.def_id) => {
                         tcx.dcx().span_delayed_bug(
                             tcx.def_span(obligation.predicate.def_id),
@@ -1535,6 +1545,8 @@ fn confirm_builtin_candidate<'cx, 'tcx>(
             }
         });
         (metadata_ty.into(), obligations)
+    } else if tcx.trait_is_comptime(trait_def_id) {
+        bug!("not implemented: {:?}", obligation.predicate);
     } else {
         bug!("unexpected builtin trait with associated type: {:?}", obligation.predicate);
     };

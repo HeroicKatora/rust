@@ -36,6 +36,11 @@ pub struct TraitDef {
     /// and thus `impl`s of it are allowed to overlap.
     pub is_marker: bool,
 
+    /// If `true` the this trait has a `#[comptime]` attribute, indicating
+    /// that all its implementations are synthesized based on the evaluation
+    /// of a const-fn.
+    pub is_comptime: bool,
+
     /// If `true`, then this trait has the `#[rustc_coinductive]` attribute or
     /// is an auto trait. This indicates that trait solver cycles involving an
     /// `X: ThisTrait` goal are accepted.

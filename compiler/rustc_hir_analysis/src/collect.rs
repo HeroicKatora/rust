@@ -1167,6 +1167,9 @@ fn trait_def(tcx: TyCtxt<'_>, def_id: LocalDefId) -> ty::TraitDef {
     // Only regular traits can be marker.
     let is_marker = !is_alias && tcx.has_attr(def_id, sym::marker);
 
+    // Only regular traits can be comptime.
+    let is_comptime = !is_alias && tcx.has_attr(def_id, sym::comptime);
+
     let rustc_coinductive = tcx.has_attr(def_id, sym::rustc_coinductive);
     let is_fundamental = tcx.has_attr(def_id, sym::fundamental);
 
@@ -1269,7 +1272,7 @@ fn trait_def(tcx: TyCtxt<'_>, def_id: LocalDefId) -> ty::TraitDef {
             no_dups.then_some(list)
         });
 
-    let deny_explicit_impl = tcx.has_attr(def_id, sym::rustc_deny_explicit_impl);
+    let deny_explicit_impl = tcx.has_attr(def_id, sym::rustc_deny_explicit_impl) || is_comptime;
     let implement_via_object = !tcx.has_attr(def_id, sym::rustc_do_not_implement_via_object);
 
     ty::TraitDef {
@@ -1279,6 +1282,7 @@ fn trait_def(tcx: TyCtxt<'_>, def_id: LocalDefId) -> ty::TraitDef {
         paren_sugar,
         has_auto_impl: is_auto,
         is_marker,
+        is_comptime,
         is_coinductive: rustc_coinductive || is_auto,
         is_fundamental,
         skip_array_during_method_dispatch,

@@ -100,6 +100,9 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
                     obligation,
                     &mut candidates,
                 );
+            } else if tcx.trait_is_comptime(def_id) {
+                // Can only be automatically implemented for specific Fn Item types.
+                candidates.vec.push(BuiltinCandidate { has_nested: false });
             } else {
                 if tcx.is_lang_item(def_id, LangItem::Clone) {
                     // Same builtin conditions as `Copy`, i.e., every type which has builtin support

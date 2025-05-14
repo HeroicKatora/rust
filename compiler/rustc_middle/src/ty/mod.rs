@@ -1866,6 +1866,11 @@ impl<'tcx> TyCtxt<'tcx> {
         self.trait_def(trait_def_id).has_auto_impl
     }
 
+    /// Returns `true` if this is `#[comptime]`.
+    pub fn trait_is_comptime(self, trait_def_id: DefId) -> bool {
+        self.trait_def(trait_def_id).is_comptime
+    }
+
     /// Returns `true` if this is coinductive, either because it is
     /// an auto trait or because it has the `#[rustc_coinductive]` attribute.
     pub fn trait_is_coinductive(self, trait_def_id: DefId) -> bool {

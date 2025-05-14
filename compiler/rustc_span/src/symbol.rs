@@ -666,6 +666,7 @@ symbols! {
         compiler,
         compiler_builtins,
         compiler_fence,
+        comptime,
         concat,
         concat_bytes,
         concat_idents,
