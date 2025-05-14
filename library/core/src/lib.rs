@@ -331,6 +331,8 @@ pub mod async_iter;
 pub mod bstr;
 pub mod cell;
 pub mod char;
+#[unstable(feature = "comptime", issue = "none")]
+pub mod comptime;
 pub mod ffi;
 #[unstable(feature = "core_io_borrowed_buf", issue = "117693")]
 pub mod io;

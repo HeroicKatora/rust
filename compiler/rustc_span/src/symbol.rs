@@ -219,6 +219,7 @@ symbols! {
         CoercePointeeValidated,
         CoerceUnsized,
         Command,
+        ComptimeContext,
         ConstParamTy,
         ConstParamTy_,
         Context,

@@ -436,6 +436,9 @@ language_item_table! {
     DefaultTrait1,           sym::default_trait1,      default_trait1_trait,       Target::Trait,          GenericRequirement::None;
 
     ContractCheckEnsures,     sym::contract_check_ensures,      contract_check_ensures_fn,      Target::Fn, GenericRequirement::None;
+
+    // Experimental lang item for comptime
+    ComptimeContext,         sym::ComptimeContext,     comptime_context,           Target::Struct,          GenericRequirement::Exact(0);
 }
 
 /// The requirement imposed on the generics of a lang item
