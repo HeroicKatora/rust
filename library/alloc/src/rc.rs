@@ -927,6 +927,44 @@ impl<T, A: Allocator> Rc<T, A> {
         }
     }
 
+    /// Turn a boxed value into a reference counted value.
+    ///
+    /// # Examples
+    ///
+    /// This function can convert an unsized value which would be hard to move into an intermediate
+    /// variable to create the reference counted allocation.
+    ///
+    /// ```
+    /// use std::rc::Rc;
+    /// use std::string::ToString;
+    ///
+    /// let value: Box<dyn ToString> = Box::new(42);
+    /// let rc: Rc<dyn ToString> = Rc::from_box(value);
+    ///
+    /// assert_eq!(rc.to_string(), "42");
+    /// ```
+    #[unstable(feature = "arc_from_boxed", issue = "none")]
+    pub fn from_box(boxed: Box<T, A>) -> Self {
+        let boxed_layout = Layout::for_value(&*boxed);
+        let layout = rc_inner_layout_for_value_layout(boxed_layout);
+
+        let (ptr, alloc) =
+            Box::leak_realloc(boxed, layout).unwrap_or_else(|_| handle_alloc_error(layout));
+
+        // The value is still at the start of this reallocated memory.
+        let offset = size_of::<RcInner<()>>();
+        let memptr = ptr as *mut u8;
+
+        // Safety: the new size is `RcInner` followed by the value, followed by padding.
+        // The returned pointer is valid for reads and writes as we own it following the box
+        // reallocation.
+        unsafe { ptr::copy(memptr, memptr.add(offset), boxed_layout.size()) };
+
+        // Safety: An allocated pointer is always non-null. The new allocation has the proper layout
+        // for the provided value as it was calculated with `rc_inner_layout_for_value_layout`.
+        unsafe { Self::from_inner_in(NonNull::new_unchecked(ptr as *mut RcInner<T>), alloc) }
+    }
+
     /// Constructs a new `Pin<Rc<T>>` in the provided allocator. If `T` does not implement `Unpin`, then
     /// `value` will be pinned in memory and unable to be moved.
     #[cfg(not(no_global_oom_handling))]

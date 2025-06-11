@@ -1645,6 +1645,36 @@ impl<T: ?Sized, A: Allocator> Box<T, A> {
         // additional requirements.
         unsafe { Pin::new_unchecked(boxed) }
     }
+
+    /// Leak the value, after reallocating the inner allocation.
+    ///
+    /// This takes care of correct ownership if the reallocation fails.
+    pub(crate) fn leak_realloc(this: Self, layout: Layout) -> Result<(*mut T, A), AllocError> {
+        // Note: if the reallocation fails or panics, we still want to drop the value.
+        let current = Layout::for_value(&*this);
+        let allocator = &this.1;
+
+        let ptr = this.0;
+        let newaddr = unsafe {
+            if current.size() == 0 {
+                allocator.allocate(layout)
+            } else if current.size() > layout.size() {
+                // Non-zero sized allocations were obtained from the allocator.
+                allocator.grow(From::from(ptr.cast()), current, layout)
+            } else {
+                allocator.shrink(From::from(ptr.cast()), current, layout)
+            }
+        }?;
+
+        // This allocation and pointer are no longer valid for access
+        let this = mem::ManuallyDrop::new(this);
+        // … except the metadata which must be copied over.
+        let ptr = newaddr.as_ptr().with_metadata_of(ptr.as_ptr());
+        // And get the allocator out with touching the box deref
+        let alloc = unsafe { ptr::read(&raw const this.1) };
+
+        Ok((ptr, alloc))
+    }
 }
 
 #[stable(feature = "rust1", since = "1.0.0")]
