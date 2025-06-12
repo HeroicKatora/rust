@@ -1351,3 +1351,82 @@ pub macro CoercePointee($item:item) {
 pub trait CoercePointeeValidated {
     /* compiler built-in */
 }
+
+/// Can be used as a receiver value for static trait methods.
+///
+/// # Examples
+///
+/// This type can be coerced and trait methods with a suitably typed `self` parameter can be called
+/// on such values:
+///
+/// ```
+/// #![feature(static_dyn_dispatch)]
+/// #![feature(arbitrary_self_types)]
+///
+/// use core::marker::Static;
+///
+/// trait PrintType {
+///    fn type_name(self: Static<Self>) -> &'static str;
+/// }
+///
+/// impl<T: 'static> PrintType for T {
+///     fn type_name(self: Static<Self>) -> &'static str {
+///         std::any::type_name::<T>()
+///     }
+/// }
+///
+/// let marker_u8 = Static::<u8>::new();
+/// let marker_dyn: Static<dyn PrintType> = marker_u8;
+/// eprintln!("This dyn marker refers to: {}", marker_dyn.type_name());
+/// ```
+#[unstable(feature = "static_dyn_dispatch", issue = "none")]
+#[allow(missing_debug_implementations)]
+pub struct Static<T: ?Sized>(*const T);
+
+impl<T> Static<T> {
+    /// Create a new [`Static`], which is equivalent to any other such value.
+    #[unstable(feature = "static_dyn_dispatch", issue = "none")]
+    pub const fn new() -> Self {
+        Static(core::ptr::dangling())
+    }
+}
+
+#[unstable(feature = "static_dyn_dispatch", issue = "none")]
+impl<T: ?Sized> core::ops::Receiver for Static<T> {
+    type Target = T;
+}
+
+#[unstable(feature = "static_dyn_dispatch", issue = "none")]
+impl<T: ?Sized, U: ?Sized> core::ops::DispatchFromDyn<Static<U>> for Static<T> where
+    T: core::marker::Unsize<U>
+{
+}
+
+#[unstable(feature = "static_dyn_dispatch", issue = "none")]
+impl<T: ?Sized, U: ?Sized> core::ops::CoerceUnsized<Static<U>> for Static<T> where
+    T: core::marker::Unsize<U>
+{
+}
+
+#[unstable(feature = "static_dyn_dispatch", issue = "none")]
+impl<T> Default for Static<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[unstable(feature = "static_dyn_dispatch", issue = "none")]
+impl<T: ?Sized> From<&'_ T> for Static<T> {
+    fn from(value: &'_ T) -> Self {
+        // It is okay we ignore provenance here, the pointer is just for show.
+        Static(value as *const T)
+    }
+}
+
+#[unstable(feature = "static_dyn_dispatch", issue = "none")]
+impl<T: ?Sized> From<&'_ mut T> for Static<T> {
+    fn from(value: &'_ mut T) -> Self {
+        // It is okay we ignore provenance here, the pointer is just for show.
+        Static(value as *const T)
+    }
+}
