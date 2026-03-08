@@ -1300,7 +1300,7 @@ impl<T: ?Sized> RefCell<T> {
     /// in [`borrow_mut`] and most other methods of `RefCell` are therefore
     /// unnecessary. Note that this method does not reset the borrowing state if borrows were previously leaked
     /// (e.g., via [`forget()`] on a [`Ref`] or [`RefMut`]). For that purpose,
-    /// consider using the unstable [`undo_leak`] method.
+    /// consider using the unstable [`clear_borrows`] method.
     ///
     /// This method can only be called if `RefCell` can be mutably borrowed,
     /// which in general is only the case directly after the `RefCell` has
@@ -1312,7 +1312,7 @@ impl<T: ?Sized> RefCell<T> {
     ///
     /// [`borrow_mut`]: RefCell::borrow_mut()
     /// [`forget()`]: mem::forget
-    /// [`undo_leak`]: RefCell::undo_leak()
+    /// [`clear_borrows`]: RefCell::clear_borrows()
     ///
     /// # Examples
     ///
@@ -1333,9 +1333,11 @@ impl<T: ?Sized> RefCell<T> {
 
     /// Undo the effect of leaked guards on the borrow state of the `RefCell`.
     ///
-    /// This call is similar to [`get_mut`] but more specialized. It borrows `RefCell` mutably to
-    /// ensure no borrows exist and then resets the state tracking shared borrows. This is relevant
-    /// if some `Ref` or `RefMut` borrows have been leaked.
+    /// This reset the internal state tracking outstanding mutable and shared  borrows to this cell,
+    /// using the static guarantee that no references to the underlying data exist when called. This
+    /// is relevant if [`Ref`] or [`RefMut`] borrows have been leaked which prevents the cell from
+    /// becoming unborrowed. This complements [`get_mut`] which provides access to the value but
+    /// does not interact with the counter at all.
     ///
     /// [`get_mut`]: RefCell::get_mut()
     ///
@@ -1349,14 +1351,13 @@ impl<T: ?Sized> RefCell<T> {
     /// std::mem::forget(c.borrow_mut());
     ///
     /// assert!(c.try_borrow().is_err());
-    /// c.undo_leak();
+    /// c.clear_borrows();
     /// assert!(c.try_borrow().is_ok());
     /// ```
     #[unstable(feature = "cell_leak", issue = "69099")]
     #[rustc_const_unstable(feature = "const_ref_cell", issue = "137844")]
-    pub const fn undo_leak(&mut self) -> &mut T {
+    pub const fn clear_borrows(&mut self) {
         *self.borrow.get_mut() = UNUSED;
-        self.get_mut()
     }
 
     /// Immutably borrows the wrapped value, returning an error if the value is
